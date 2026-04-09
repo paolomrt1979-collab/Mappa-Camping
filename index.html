@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestionale Camping Live</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
+        .ok { color: #2ecc71; font-weight: bold; margin-bottom: 10px; }
+        .mappa-container { position: relative; display: inline-block; background: white; padding: 10px; border-radius: 10px; }
+        img { display: block; max-width: 100%; height: auto; }
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
+        .modal-content { background: white; color: #333; margin: 10% auto; padding: 25px; width: 300px; border-radius: 20px; text-align: left; }
+        .chiudi { float: right; font-size: 30px; cursor: pointer; color: #ccc; }
+    </style>
+</head>
+<body>
+    <div id="status" class="ok">● SISTEMA ONLINE</div>
+    <div class="mappa-container">
+        <img src="mappa.jpg.jpeg.jpeg" usemap="#image-map">
+        <map name="image-map">
+            <area target="" alt="26" title="26" href="javascript:void(0)" onclick="apriScheda('26')" coords="182,415,216,442" shape="rect">
+        </map>
+    </div>
+    <div id="popup" class="modal">
+        <div class="modal-content">
+            <span class="chiudi" onclick="chiudi()">&times;</span>
+            <h2 id="p_num">Piazzola --</h2>
+            <p><strong>Nome:</strong> <span id="p_nome">---</span></p>
+            <p><strong>Tel:</strong> <span id="p_tel">---</span></p>
+            <p><strong>Contatore:</strong> <span id="p_cont">---</span></p>
+        </div>
+    </div>
+    <script>
+        let foglioDati = {};
+        const urlCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn2t2WS-_S4mGcfv9uf0ogf0G7ddF1RYCSYJBNlAACzjTO4BJSNt5edIkc9VdMlBBOxWWDf0jbxt4u/pub?output=csv";
+
+        async function caricaDati() {
+            try {
+                const r = await fetch(urlCSV + "&t=" + Date.now());
+                const t = await r.text();
+                Papa.parse(t, {
+                    header: true,
+                    complete: function(res) {
+                        res.data.forEach(r => {
+                            let k = r["Numero"] || r["numero"];
+                            if(k) foglioDati[k.trim()] = r;
+                        });
+                    }
+                });
+            } catch (e) { console.error("Errore caricamento"); }
+        }
+
+        function apriScheda(n) {
+            const d = foglioDati[n];
+            document.getElementById('p_num').innerText = "Piazzola " + n;
+            document.getElementById('p_nome').innerText = d ? (d["Nome"] || d["nome"] || "---") : "Libera";
+            document.getElementById('p_tel').innerText = d ? (d["Telefono"] || d["telefono"] || "---") : "---";
+            document.getElementById('p_cont').innerText = d ? (d["Contatore"] || d["contatore"] || "---") : "---";
+            document.getElementById('popup').style.display = "block";
+        }
+        function chiudi() { document.getElementById('popup').style.display = "none"; }
+        caricaDati();
+        setInterval(caricaDati, 10000); // Aggiorna ogni 10 secondi da solo
+    </script>
+</body>
+</html>

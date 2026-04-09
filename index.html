@@ -2,15 +2,15 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Mappa Live Camping</title>
+    <title>Mappa Gestionale Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/image-map-resizer/1.0.10/js/imageMapResizer.min.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
-        #status { padding: 10px; margin: 10px; border-radius: 20px; display: inline-block; font-weight: bold; }
-        .ok { background: #2ecc71; }
-        .errore { background: #e74c3c; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        #status { padding: 10px 20px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-weight: bold; }
+        .ok { background: #2ecc71; color: white; }
         .mappa-container { position: relative; display: inline-block; background: white; padding: 10px; border-radius: 10px; }
-        img { display: block; max-width: 100%; height: auto; border: 1px solid #ccc; }
+        img { display: block; max-width: 100%; height: auto; }
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); }
         .modal-content { background: white; color: #333; margin: 10% auto; padding: 25px; width: 280px; border-radius: 20px; text-align: left; }
         .chiudi { float: right; font-size: 30px; cursor: pointer; color: #ccc; }
@@ -18,12 +18,11 @@
 </head>
 <body>
 
-    <div id="status">Connessione...</div>
-    <h1>Mappa Gestionale Live</h1>
+    <div id="status" class="ok">SINCRONIZZAZIONE...</div>
+    <h1>Mappa Camping Live</h1>
 
     <div class="mappa-container">
-        <img src="mappa.jpg.jpeg.jpeg" usemap="#image-map">
-        
+        <img src="mappa.jpg.jpeg.jpeg" usemap="#image-map" id="mappa-img">
         <map name="image-map">
             <area shape="rect" coords="182,415,216,442" href="javascript:void(0)" onclick="apriScheda('26')" alt="26">
         </map>
@@ -32,10 +31,11 @@
     <div id="popup" class="modal">
         <div class="modal-content">
             <span class="chiudi" onclick="chiudi()">&times;</span>
-            <h2 id="p_num" style="color:#2ecc71">Piazzola --</h2>
-            <p><strong>Nome:</strong> <span id="p_nome">---</span></p>
-            <p><strong>Telefono:</strong> <span id="p_tel">---</span></p>
-            <p><strong>Contatore:</strong> <span id="p_cont">---</span></p>
+            <h2 id="p_num" style="color:#2ecc71; margin-top:0;">Piazzola --</h2>
+            <hr>
+            <p><strong>CLIENTE:</strong> <br><span id="p_nome" style="font-size:1.2em">---</span></p>
+            <p><strong>TELEFONO:</strong> <br><span id="p_tel">---</span></p>
+            <p><strong>CONTATORE:</strong> <br><span id="p_cont">---</span></p>
         </div>
     </div>
 
@@ -43,6 +43,7 @@
         let foglioDati = {};
         const urlCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn2t2WS-_S4mGcfv9uf0ogf0G7ddF1RYCSYJBNlAACzjTO4BJSNt5edIkc9VdMlBBOxWWDf0jbxt4u/pub?output=csv";
 
+        // Funzione per caricare i dati
         async function caricaDati() {
             try {
                 const response = await fetch(urlCSV + "&t=" + Date.now());
@@ -52,23 +53,19 @@
                     skipEmptyLines: true,
                     complete: function(results) {
                         results.data.forEach(r => {
-                            let n = r["Numero"] || r["numero"];
+                            let n = r["Numero"] || r["numero"] || r[" Numero"];
                             if(n) foglioDati[n.toString().trim()] = r;
                         });
-                        document.getElementById('status').innerText = "✓ DATI SINCRONIZZATI";
-                        document.getElementById('status').className = "ok";
+                        document.getElementById('status').innerText = "✓ SISTEMA AGGIORNATO";
                     }
                 });
-            } catch (e) {
-                document.getElementById('status').innerText = "ERRORE CONNESSIONE";
-                document.getElementById('status').className = "errore";
-            }
+            } catch (e) { console.log("Errore caricaDati"); }
         }
 
         function apriScheda(n) {
             const d = foglioDati[n];
             document.getElementById('p_num').innerText = "Piazzola " + n;
-            document.getElementById('p_nome').innerText = d ? (d["Nome"] || d["nome"] || "---") : "Libera";
+            document.getElementById('p_nome').innerText = d ? (d["Nome"] || d["nome"] || "LIBERA") : "LIBERA";
             document.getElementById('p_tel').innerText = d ? (d["Telefono"] || d["telefono"] || "---") : "---";
             document.getElementById('p_cont').innerText = d ? (d["Contatore"] || d["contatore"] || "---") : "---";
             document.getElementById('popup').style.display = "block";
@@ -77,8 +74,13 @@
         function chiudi() { document.getElementById('popup').style.display = "none"; }
         window.onclick = function(e) { if(e.target == document.getElementById('popup')) chiudi(); }
         
-        caricaDati();
-        setInterval(caricaDati, 15000); // Aggiorna ogni 15 secondi
+        // Attiva il ridimensionamento automatico dei tasti
+        window.onload = function() {
+            imageMapResize();
+            caricaDati();
+        };
+
+        setInterval(caricaDati, 10000); 
     </script>
 </body>
 </html>
